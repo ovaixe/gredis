@@ -2,8 +2,11 @@ package commands
 
 import (
 	"errors"
+	"fmt"
+	"strconv"
 	"strings"
-	
+	"time"
+
 	"github.com/ovaixe/gredis/internal/storage"
 )
 
@@ -16,10 +19,22 @@ func ExecuteCommand(cmd string, store *storage.Storage) (string, error) {
 	command := parts[0]
 	switch command {
 		case "SET":
-			if len(parts) != 3 {
-				return "", errors.New("Usage: SET [key] [value]")
+			if len(parts) < 3 || len(parts) > 4 {
+				return "", errors.New("Usage: SET [key] [value] [TTL]")
 			}
-			store.Set(parts[1], parts[2])
+			
+			key := parts[1]
+			value := parts[2]
+			var ttl time.Duration
+			if len(parts) == 4 {
+				ttlSeconds, err := strconv.Atoi(parts[3])
+				if err != nil {
+					return "", errors.New("Invalid TTL value")
+				}
+				
+				ttl = time.Duration(ttlSeconds) * time.Second
+			}
+			store.Set(key, value, ttl)
 			return "OK", nil
 		case "GET":
 			if len(parts) != 2 {
