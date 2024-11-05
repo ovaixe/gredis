@@ -67,7 +67,7 @@ func (s *Server) HandleConnection(conn net.Conn) {
 		// Read incomming command
 		cmd, err := reader.ReadString('\n')
 		if err != nil {
-			fmt.Fprintf(conn, "Error reading command: %V\n", err)
+			fmt.Fprintf(conn, "Error reading command: %v\n", err)
 		}
 		
 		// Parse and execute the command
