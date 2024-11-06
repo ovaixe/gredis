@@ -19,11 +19,11 @@ const (
 // Value struct to use in the serialization and deserialization process,
 // which will hold all the commands and arguments we receive from the client.
 type Value struct {
-	typ   string
-	str   string
-	num   int
-	bulk  string
-	array []Value
+	Typ   string
+	Str   string
+	Num   int
+	Bulk  string
+	Array []Value
 }
 
 // Reader to contain all the methods that will help us read from the buffer and store it in the Value struct.
@@ -44,13 +44,13 @@ func NewWriter(w io.Writer) *Writer {
 }
 
 func (w *Writer) Write(v Value) error {
-	var bytes = v.Marshal()
-	
+	bytes := v.Marshal()
+
 	_, err := w.writer.Write(bytes)
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -105,7 +105,7 @@ func (r *Resp) Read() (Value, error) {
 
 func (r *Resp) readArray() (Value, error) {
 	v := Value{}
-	v.typ = "array"
+	v.Typ = "array"
 
 	// read length of array
 	len, _, err := r.readInteger()
@@ -114,7 +114,7 @@ func (r *Resp) readArray() (Value, error) {
 	}
 
 	// for each line, parse and read the value
-	v.array = make([]Value, 0)
+	v.Array = make([]Value, 0)
 	for i := 0; i < len; i++ {
 		val, err := r.Read()
 		if err != nil {
@@ -122,7 +122,7 @@ func (r *Resp) readArray() (Value, error) {
 		}
 
 		// append parsed value to the array
-		v.array = append(v.array, val)
+		v.Array = append(v.Array, val)
 	}
 
 	return v, nil
@@ -130,7 +130,7 @@ func (r *Resp) readArray() (Value, error) {
 
 func (r *Resp) readBulk() (Value, error) {
 	v := Value{}
-	v.typ = "bulk"
+	v.Typ = "bulk"
 
 	len, _, err := r.readInteger()
 	if err != nil {
@@ -139,7 +139,7 @@ func (r *Resp) readBulk() (Value, error) {
 
 	bulk := make([]byte, len)
 	r.reader.Read(bulk)
-	v.bulk = string(bulk)
+	v.Bulk = string(bulk)
 
 	// read the trailing CRLF
 	r.readLine()
@@ -148,7 +148,7 @@ func (r *Resp) readBulk() (Value, error) {
 }
 
 func (v Value) Marshal() []byte {
-	switch v.typ {
+	switch v.Typ {
 	case "array":
 		return v.marshalArray()
 	case "bulk":
@@ -161,50 +161,49 @@ func (v Value) Marshal() []byte {
 		return v.marshalError()
 	default:
 		return []byte{}
-
 	}
 }
 
 func (v Value) marshalString() []byte {
 	var bytes []byte
 	bytes = append(bytes, STRING)
-	bytes = append(bytes, v.str...)
+	bytes = append(bytes, v.Str...)
 	bytes = append(bytes, '\r', '\n')
-	
+
 	return bytes
 }
 
 func (v Value) marshalBulk() []byte {
 	var bytes []byte
 	bytes = append(bytes, BULK)
-	bytes = append(bytes, strconv.Itoa(len(v.bulk))...)
+	bytes = append(bytes, strconv.Itoa(len(v.Bulk))...)
 	bytes = append(bytes, '\r', '\n')
-	bytes = append(bytes, v.bulk...)
+	bytes = append(bytes, v.Bulk...)
 	bytes = append(bytes, '\r', '\n')
-	
+
 	return bytes
 }
 
 func (v Value) marshalArray() []byte {
-	len := len(v.array)
+	len := len(v.Array)
 	var bytes []byte
 	bytes = append(bytes, ARRAY)
 	bytes = append(bytes, strconv.Itoa(len)...)
 	bytes = append(bytes, '\r', '\n')
-	
+
 	for i := 0; i < len; i++ {
-		bytes = append(bytes, v.array[i].Marshal()...)
+		bytes = append(bytes, v.Array[i].Marshal()...)
 	}
-	
+
 	return bytes
 }
 
 func (v Value) marshalError() []byte {
 	var bytes []byte
 	bytes = append(bytes, ERROR)
-	bytes = append(bytes, v.str...)
+	bytes = append(bytes, v.Str...)
 	bytes = append(bytes, '\r', '\n')
-	
+
 	return bytes
 }
 
