@@ -43,6 +43,23 @@ func NewWriter(w io.Writer) *Writer {
 	return &Writer{writer: w}
 }
 
+func (r *Resp) Read() (Value, error) {
+	_type, err := r.reader.ReadByte()
+	if err != nil {
+		return Value{}, err
+	}
+
+	switch _type {
+	case ARRAY:
+		return r.readArray()
+	case BULK:
+		return r.readBulk()
+	default:
+		fmt.Printf("Unknown type: %v", string(_type))
+		return Value{}, nil
+	}
+}
+
 func (w *Writer) Write(v Value) error {
 	bytes := v.Marshal()
 
@@ -84,23 +101,6 @@ func (r *Resp) readInteger() (x, n int, err error) {
 	}
 
 	return int(i64), n, nil
-}
-
-func (r *Resp) Read() (Value, error) {
-	_type, err := r.reader.ReadByte()
-	if err != nil {
-		return Value{}, err
-	}
-
-	switch _type {
-	case ARRAY:
-		return r.readArray()
-	case BULK:
-		return r.readBulk()
-	default:
-		fmt.Printf("Unknown type: %v", string(_type))
-		return Value{}, nil
-	}
 }
 
 func (r *Resp) readArray() (Value, error) {
