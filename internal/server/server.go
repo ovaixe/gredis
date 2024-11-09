@@ -66,7 +66,7 @@ func (s *Server) HandleConnection(conn net.Conn) {
 
 	for {
 		// Read incomming command
-		value, err := reader.Read()
+		cmd, err := reader.Read()
 		if err != nil {
 			if err == io.EOF {
 				s.logger.Printf("Client disconnected: %v\n", conn.RemoteAddr())
@@ -77,18 +77,18 @@ func (s *Server) HandleConnection(conn net.Conn) {
 			return
 		}
 
-		if value.Typ != "array" {
+		if cmd.Typ != "array" {
 			s.logger.Println("Invalid request, expected array")
 			continue
 		}
 
-		if len(value.Array) == 0 {
+		if len(cmd.Array) == 0 {
 			s.logger.Println("Invalid request, expected array length > 0")
 			continue
 		}
 
 		// Execute the command
-		result, err := commands.ExecuteCommand(value, s.storage)
+		result, err := commands.ExecuteCommand(cmd, s.storage)
 		if err != nil {
 			writer.Write(resp.Value{Typ: "string", Str: err.Error()})
 			continue

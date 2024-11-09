@@ -17,6 +17,12 @@ func ExecuteCommand(cmd resp.Value, store *storage.Storage) (resp.Value, error) 
 	args := cmd.Array[1:]
 
 	switch command {
+	case "PING":
+		if len(args) == 0 {
+			return resp.Value{Typ: "string", Str: "PONG"}, nil
+		}
+
+		return resp.Value{Typ: "string", Str: args[0].Bulk}, nil
 	case "SET":
 		if len(args) < 2 || len(args) > 3 {
 			return resp.Value{}, errors.New("Usage: SET [key] [value] [TTL]")
