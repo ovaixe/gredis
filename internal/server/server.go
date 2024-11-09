@@ -2,10 +2,10 @@ package server
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
-	"strings"
 
 	"github.com/ovaixe/gredis/internal/commands"
 	"github.com/ovaixe/gredis/internal/resp"
@@ -62,39 +62,37 @@ func (s *Server) Serve() {
 func (s *Server) HandleConnection(conn net.Conn) {
 	defer conn.Close()
 	reader := resp.NewResp(conn)
+	writer := resp.NewWriter(conn)
 
 	for {
 		// Read incomming command
 		value, err := reader.Read()
 		if err != nil {
-			fmt.Printf("Error reading command: %v\n", err)
+			if err == io.EOF {
+				s.logger.Printf("Client disconnected: %v\n", conn.RemoteAddr())
+				return
+			}
+
+			s.logger.Printf("Error reading command: %v\n", err)
 			return
 		}
 
 		if value.Typ != "array" {
-			fmt.Println("Invalid request, expected array")
+			s.logger.Println("Invalid request, expected array")
 			continue
 		}
 
 		if len(value.Array) == 0 {
-			fmt.Println("Invalid request, expected array length > 0")
+			s.logger.Println("Invalid request, expected array length > 0")
 			continue
 		}
-
-		// Parse the command
-		command := strings.ToUpper(value.Array[0].Bulk)
-		args := value.Array[1:]
-
-		writer := resp.NewWriter(conn)
 
 		// Execute the command
-		handler, ok := commands.Handlers[command]
-		if !ok {
-			writer.Write(resp.Value{Typ: "string", Str: "Invalid command"})
+		result, err := commands.ExecuteCommand(value, s.storage)
+		if err != nil {
+			writer.Write(resp.Value{Typ: "string", Str: err.Error()})
 			continue
 		}
-
-		result := handler(args)
 
 		// Send response to client
 		writer.Write(result)
