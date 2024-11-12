@@ -88,11 +88,7 @@ func (s *Server) HandleConnection(conn net.Conn) {
 		}
 
 		// Execute the command
-		result, err := commands.ExecuteCommand(cmd, s.storage)
-		if err != nil {
-			writer.Write(resp.Value{Typ: "string", Str: err.Error()})
-			continue
-		}
+		result := commands.ExecuteCommand(cmd, s.storage)
 
 		// Send response to client
 		writer.Write(result)
