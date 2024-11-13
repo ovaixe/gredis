@@ -41,6 +41,17 @@ func ExecuteCommand(cmd resp.Value, store *storage.Storage) resp.Value {
 
 		store.Set(key, value, ttl)
 		return resp.Value{Typ: "string", Str: "OK"}
+	case "HSET":
+		if len(args) != 3 {
+			return resp.Value{Typ: "error", Str: "Usage: HSET [hash] [key] [value]"}
+		}
+
+		hash := args[0].Bulk
+		key := args[1].Bulk
+		value := args[2].Bulk
+
+		store.HSet(hash, key, value)
+		return resp.Value{Typ: "string", Str: "OK"}
 	case "GET":
 		if len(args) != 1 {
 			return resp.Value{Typ: "error", Str: "Usage: GET [key]"}
@@ -52,12 +63,74 @@ func ExecuteCommand(cmd resp.Value, store *storage.Storage) resp.Value {
 		}
 
 		return resp.Value{Typ: "bulk", Bulk: value}
+	case "HGET":
+		if len(args) != 2 {
+			return resp.Value{Typ: "error", Str: "Usage: HGET [hash] [key]"}
+		}
+
+		hash := args[0].Bulk
+		key := args[1].Bulk
+
+		value, found := store.HGet(hash, key)
+		if !found {
+			return resp.Value{Typ: "null"}
+		}
+
+		return resp.Value{Typ: "bulk", Bulk: value}
+	case "HGETALL":
+		if len(args) != 1 {
+			return resp.Value{Typ: "error", Str: "Usage: HGET [hash] [key]"}
+		}
+
+		hash := args[0].Bulk
+
+		value, found := store.HGetAll(hash)
+		if !found {
+			return resp.Value{Typ: "null"}
+		}
+
+		result := []resp.Value{}
+
+		for field, val := range value {
+			result = append(result, resp.Value{Typ: "string", Str: field})
+			result = append(result, resp.Value{Typ: "string", Str: val})
+		}
+
+		return resp.Value{Typ: "array", Array: result}
 	case "DEL":
 		if len(args) != 1 {
 			return resp.Value{Typ: "error", Str: "Usage: DEL [key]"}
 		}
 
 		err := store.Delete(args[0].Bulk)
+		if err != nil {
+			return resp.Value{Typ: "error", Str: err.Error()}
+		}
+
+		return resp.Value{Typ: "string", Str: "OK"}
+	case "HDEL":
+		if len(args) != 2 {
+			return resp.Value{Typ: "error", Str: "Usage: HDEL [hash] [key]"}
+		}
+
+		hash := args[0].Bulk
+		key := args[1].Bulk
+
+		err := store.HDelete(hash, key)
+		if err != nil {
+			return resp.Value{Typ: "error", Str: err.Error()}
+		}
+
+		return resp.Value{Typ: "string", Str: "OK"}
+	case "HDELALL":
+		if len(args) != 1 {
+
+			return resp.Value{Typ: "error", Str: "Usage: HDELALL [hash]"}
+		}
+
+		hash := args[0].Bulk
+
+		err := store.HDeleteAll(hash)
 		if err != nil {
 			return resp.Value{Typ: "error", Str: err.Error()}
 		}

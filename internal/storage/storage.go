@@ -9,6 +9,7 @@ import (
 // Storage struct represents an in-memory key-value store
 type Storage struct {
 	data       map[string]string
+	hset       map[string]map[string]string
 	expiration map[string]time.Time
 	mu         sync.RWMutex
 }
@@ -17,6 +18,7 @@ type Storage struct {
 func NewStorage() *Storage {
 	store := &Storage{
 		data:       make(map[string]string),
+		hset:       make(map[string]map[string]string),
 		expiration: make(map[string]time.Time),
 	}
 
@@ -39,6 +41,18 @@ func (s *Storage) Set(key, value string, ttl time.Duration) {
 	}
 }
 
+// HSet stores a key-value pair for a given hash in hset
+func (s *Storage) HSet(hash, key, value string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, ok := s.hset[hash]; !ok {
+		s.hset[hash] = map[string]string{}
+	}
+
+	s.hset[hash][key] = value
+}
+
 // Get retrieves the value for a given key, considering TTL
 func (s *Storage) Get(key string) (string, bool) {
 	s.mu.RLock()
@@ -53,6 +67,24 @@ func (s *Storage) Get(key string) (string, bool) {
 	return value, found
 }
 
+// HGet retrieves the value for a given hash and key in hset
+func (s *Storage) HGet(hash, key string) (string, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	value, found := s.hset[hash][key]
+	return value, found
+}
+
+// HGetAll retrieves all values for a given hash in hset
+func (s *Storage) HGetAll(hash string) (map[string]string, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	value, found := s.hset[hash]
+	return value, found
+}
+
 // Delete a key from storage
 func (s *Storage) Delete(key string) error {
 	s.mu.Lock()
@@ -64,6 +96,34 @@ func (s *Storage) Delete(key string) error {
 	}
 
 	delete(s.data, key)
+	return nil
+}
+
+// HDelete deletes a key for a given hash in hset
+func (s *Storage) HDelete(hash, key string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	_, found := s.hset[hash][key]
+	if !found {
+		return errors.New("key not found")
+	}
+
+	delete(s.hset[hash], key)
+	return nil
+}
+
+// HDeleteAll deletes all values for a given hash in hset
+func (s *Storage) HDeleteAll(hash string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	_, found := s.hset[hash]
+	if !found {
+		return errors.New("key not found")
+	}
+
+	delete(s.hset, hash)
 	return nil
 }
 
