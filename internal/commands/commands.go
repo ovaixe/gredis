@@ -19,27 +19,27 @@ func ExecuteCommand(cmd resp.Value, store *storage.Storage) resp.Value {
 	case "PING":
 		return ping(args)
 	case "GET":
-		return get(args)
+		return get(args, store)
 	case "SET":
-		return set(args)
+		return set(args, store)
 	case "DEL":
-		return del(args)
+		return del(args, store)
 	case "HGET":
-		return hget(args)
+		return hget(args, store)
 	case "HGETALL":
-		return hgetAll(args)
+		return hgetAll(args, store)
 	case "HSET":
-		return hset(args)
+		return hset(args, store)
 	case "HDEL":
-		return hdel(args)
+		return hdel(args, store)
 	case "HDELALL":
-		return hdelAll(args)
+		return hdelAll(args, store)
 	default:
 		return resp.Value{Typ: "error", Str: "Unknown Command"}
 	}
 }
 
-func ping(args resp.Value) resp.Value {
+func ping(args []resp.Value) resp.Value {
 		if len(args) == 0 {
 			return resp.Value{Typ: "string", Str: "PONG"}
 		}
@@ -47,7 +47,7 @@ func ping(args resp.Value) resp.Value {
 		return resp.Value{Typ: "string", Str: args[0].Bulk}
 }
 
-func get(args resp.Value) resp.Value {
+func get(args []resp.Value, store *storage.Storage) resp.Value {
 		if len(args) != 1 {
 			return resp.Value{Typ: "error", Str: "Usage: GET [key]"}
 		}
@@ -60,7 +60,7 @@ func get(args resp.Value) resp.Value {
 		return resp.Value{Typ: "bulk", Bulk: value}
 }
 
-func set(args resp.Value) resp.Value {
+func set(args []resp.Value, store *storage.Storage) resp.Value {
 		if len(args) < 2 || len(args) > 3 {
 			return resp.Value{Typ: "error", Str: "Usage: SET [key] [value] [TTL]"}
 		}
@@ -81,7 +81,7 @@ func set(args resp.Value) resp.Value {
 		return resp.Value{Typ: "string", Str: "OK"}
 }
 
-func del(args resp.Value) resp.Value {
+func del(args []resp.Value, store *storage.Storage) resp.Value {
 		if len(args) != 1 {
 			return resp.Value{Typ: "error", Str: "Usage: DEL [key]"}
 		}
@@ -94,7 +94,7 @@ func del(args resp.Value) resp.Value {
 		return resp.Value{Typ: "string", Str: "OK"}
 }
 
-func hget(args resp.Value) resp.Value {
+func hget(args []resp.Value, store *storage.Storage) resp.Value {
 		if len(args) != 2 {
 			return resp.Value{Typ: "error", Str: "Usage: HGET [hash] [key]"}
 		}
@@ -110,7 +110,7 @@ func hget(args resp.Value) resp.Value {
 		return resp.Value{Typ: "bulk", Bulk: value}
 }
 
-func hgetAll(args resp.Value) resp.Value {
+func hgetAll(args []resp.Value, store *storage.Storage) resp.Value {
 		if len(args) != 1 {
 			return resp.Value{Typ: "error", Str: "Usage: HGETALL [hash]"}
 		}
@@ -132,7 +132,7 @@ func hgetAll(args resp.Value) resp.Value {
 		return resp.Value{Typ: "array", Array: result}
 }
 
-func hset(args resp.Value) resp.Value {
+func hset(args []resp.Value, store *storage.Storage) resp.Value {
 		if len(args) != 3 {
 			return resp.Value{Typ: "error", Str: "Usage: HSET [hash] [key] [value]"}
 		}
@@ -145,7 +145,7 @@ func hset(args resp.Value) resp.Value {
 		return resp.Value{Typ: "string", Str: "OK"}
 }
 
-func hdel(args resp.Value) resp.Value {
+func hdel(args []resp.Value, store *storage.Storage) resp.Value {
 		if len(args) != 2 {
 			return resp.Value{Typ: "error", Str: "Usage: HDEL [hash] [key]"}
 		}
@@ -161,7 +161,7 @@ func hdel(args resp.Value) resp.Value {
 		return resp.Value{Typ: "string", Str: "OK"}
 }
 
-func hdelAll(args resp.Value) resp.Value {
+func hdelAll(args []resp.Value, store *storage.Storage) resp.Value {
 		if len(args) != 1 {
 
 			return resp.Value{Typ: "error", Str: "Usage: HDELALL [hash]"}
