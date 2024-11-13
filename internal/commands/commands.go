@@ -17,12 +17,50 @@ func ExecuteCommand(cmd resp.Value, store *storage.Storage) resp.Value {
 
 	switch command {
 	case "PING":
+		return ping(args)
+	case "GET":
+		return get(args)
+	case "SET":
+		return set(args)
+	case "DEL":
+		return del(args)
+	case "HGET":
+		return hget(args)
+	case "HGETALL":
+		return hgetAll(args)
+	case "HSET":
+		return hset(args)
+	case "HDEL":
+		return hdel(args)
+	case "HDELALL":
+		return hdelAll(args)
+	default:
+		return resp.Value{Typ: "error", Str: "Unknown Command"}
+	}
+}
+
+func ping(args resp.Value) resp.Value {
 		if len(args) == 0 {
 			return resp.Value{Typ: "string", Str: "PONG"}
 		}
 
 		return resp.Value{Typ: "string", Str: args[0].Bulk}
-	case "SET":
+}
+
+func get(args resp.Value) resp.Value {
+		if len(args) != 1 {
+			return resp.Value{Typ: "error", Str: "Usage: GET [key]"}
+		}
+
+		value, found := store.Get(args[0].Bulk)
+		if !found {
+			return resp.Value{Typ: "null"}
+		}
+
+		return resp.Value{Typ: "bulk", Bulk: value}
+}
+
+func set(args resp.Value) resp.Value {
 		if len(args) < 2 || len(args) > 3 {
 			return resp.Value{Typ: "error", Str: "Usage: SET [key] [value] [TTL]"}
 		}
@@ -41,29 +79,22 @@ func ExecuteCommand(cmd resp.Value, store *storage.Storage) resp.Value {
 
 		store.Set(key, value, ttl)
 		return resp.Value{Typ: "string", Str: "OK"}
-	case "HSET":
-		if len(args) != 3 {
-			return resp.Value{Typ: "error", Str: "Usage: HSET [hash] [key] [value]"}
-		}
+}
 
-		hash := args[0].Bulk
-		key := args[1].Bulk
-		value := args[2].Bulk
-
-		store.HSet(hash, key, value)
-		return resp.Value{Typ: "string", Str: "OK"}
-	case "GET":
+func del(args resp.Value) resp.Value {
 		if len(args) != 1 {
-			return resp.Value{Typ: "error", Str: "Usage: GET [key]"}
+			return resp.Value{Typ: "error", Str: "Usage: DEL [key]"}
 		}
 
-		value, found := store.Get(args[0].Bulk)
-		if !found {
-			return resp.Value{Typ: "null"}
+		err := store.Delete(args[0].Bulk)
+		if err != nil {
+			return resp.Value{Typ: "error", Str: err.Error()}
 		}
 
-		return resp.Value{Typ: "bulk", Bulk: value}
-	case "HGET":
+		return resp.Value{Typ: "string", Str: "OK"}
+}
+
+func hget(args resp.Value) resp.Value {
 		if len(args) != 2 {
 			return resp.Value{Typ: "error", Str: "Usage: HGET [hash] [key]"}
 		}
@@ -77,9 +108,11 @@ func ExecuteCommand(cmd resp.Value, store *storage.Storage) resp.Value {
 		}
 
 		return resp.Value{Typ: "bulk", Bulk: value}
-	case "HGETALL":
+}
+
+func hgetAll(args resp.Value) resp.Value {
 		if len(args) != 1 {
-			return resp.Value{Typ: "error", Str: "Usage: HGET [hash] [key]"}
+			return resp.Value{Typ: "error", Str: "Usage: HGETALL [hash]"}
 		}
 
 		hash := args[0].Bulk
@@ -97,18 +130,22 @@ func ExecuteCommand(cmd resp.Value, store *storage.Storage) resp.Value {
 		}
 
 		return resp.Value{Typ: "array", Array: result}
-	case "DEL":
-		if len(args) != 1 {
-			return resp.Value{Typ: "error", Str: "Usage: DEL [key]"}
+}
+
+func hset(args resp.Value) resp.Value {
+		if len(args) != 3 {
+			return resp.Value{Typ: "error", Str: "Usage: HSET [hash] [key] [value]"}
 		}
 
-		err := store.Delete(args[0].Bulk)
-		if err != nil {
-			return resp.Value{Typ: "error", Str: err.Error()}
-		}
+		hash := args[0].Bulk
+		key := args[1].Bulk
+		value := args[2].Bulk
 
+		store.HSet(hash, key, value)
 		return resp.Value{Typ: "string", Str: "OK"}
-	case "HDEL":
+}
+
+func hdel(args resp.Value) resp.Value {
 		if len(args) != 2 {
 			return resp.Value{Typ: "error", Str: "Usage: HDEL [hash] [key]"}
 		}
@@ -122,7 +159,9 @@ func ExecuteCommand(cmd resp.Value, store *storage.Storage) resp.Value {
 		}
 
 		return resp.Value{Typ: "string", Str: "OK"}
-	case "HDELALL":
+}
+
+func hdelAll(args resp.Value) resp.Value {
 		if len(args) != 1 {
 
 			return resp.Value{Typ: "error", Str: "Usage: HDELALL [hash]"}
@@ -136,7 +175,4 @@ func ExecuteCommand(cmd resp.Value, store *storage.Storage) resp.Value {
 		}
 
 		return resp.Value{Typ: "string", Str: "OK"}
-	default:
-		return resp.Value{Typ: "error", Str: "Unknown Command"}
-	}
 }
