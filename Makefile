@@ -26,4 +26,4 @@ run/server:
 .PHONY: build
 build:
 	@echo 'Building cmd/server...'
-	go build -o ./bin ./cmd/server
+	go build -o ./bin/gredis ./cmd/server
