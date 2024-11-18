@@ -61,7 +61,7 @@ func (s *Server) Serve() {
 // HandleConnection processes each client connection
 func (s *Server) HandleConnection(conn net.Conn) {
 	defer conn.Close()
-	reader := resp.NewResp(conn)
+	reader := resp.NewReader(conn)
 	writer := resp.NewWriter(conn)
 
 	for {

@@ -26,24 +26,25 @@ type Value struct {
 	Array []Value
 }
 
-// Reader to contain all the methods that will help us read from the buffer and store it in the Value struct.
-type Resp struct {
+// Reader to contain all the methods that will help read from the buffer and store it in the Value struct.
+type Reader struct {
 	reader *bufio.Reader
 }
 
+// Writer to contain all the methods that will help write to the buffer
 type Writer struct {
 	writer io.Writer
 }
 
-func NewResp(rd io.Reader) *Resp {
-	return &Resp{reader: bufio.NewReader(rd)}
+func NewReader(rd io.Reader) *Reader {
+	return &Reader{reader: bufio.NewReader(rd)}
 }
 
 func NewWriter(w io.Writer) *Writer {
 	return &Writer{writer: w}
 }
 
-func (r *Resp) Read() (Value, error) {
+func (r *Reader) Read() (Value, error) {
 	_type, err := r.reader.ReadByte()
 	if err != nil {
 		return Value{}, err
@@ -72,7 +73,7 @@ func (w *Writer) Write(v Value) error {
 }
 
 // readLine reads the line from the buffer.
-func (r *Resp) readLine() (line []byte, n int, err error) {
+func (r *Reader) readLine() (line []byte, n int, err error) {
 	for {
 		b, err := r.reader.ReadByte()
 		if err != nil {
@@ -89,7 +90,7 @@ func (r *Resp) readLine() (line []byte, n int, err error) {
 	return line[:len(line)-2], n, nil
 }
 
-func (r *Resp) readInteger() (x, n int, err error) {
+func (r *Reader) readInteger() (x, n int, err error) {
 	line, n, err := r.readLine()
 	if err != nil {
 		return 0, 0, err
@@ -103,7 +104,7 @@ func (r *Resp) readInteger() (x, n int, err error) {
 	return int(i64), n, nil
 }
 
-func (r *Resp) readArray() (Value, error) {
+func (r *Reader) readArray() (Value, error) {
 	v := Value{}
 	v.Typ = "array"
 
@@ -128,7 +129,7 @@ func (r *Resp) readArray() (Value, error) {
 	return v, nil
 }
 
-func (r *Resp) readBulk() (Value, error) {
+func (r *Reader) readBulk() (Value, error) {
 	v := Value{}
 	v.Typ = "bulk"
 
