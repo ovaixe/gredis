@@ -21,3 +21,9 @@ confirm:
 .PHONY: run/server
 run/server:
 	go run ./cmd/server
+
+## build: build the 'cmp/server' application
+.PHONY: build
+build:
+	@echo 'Building cmd/server...'
+	go build -o ./bin ./cmd/server
