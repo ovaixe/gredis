@@ -9,5 +9,5 @@ const PORT = 6379
 func main() {
 	srv := server.NewServer(PORT)
 
-	srv.Serve()
+	srv.Start()
 }

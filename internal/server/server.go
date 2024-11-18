@@ -20,6 +20,7 @@ type config struct {
 // Server struct represents the Redis server
 type Server struct {
 	config  config
+	listner net.Listener
 	storage *storage.Storage
 	logger  *log.Logger
 }
@@ -33,33 +34,40 @@ func NewServer(port int) *Server {
 	}
 }
 
-// Serve creates Listener for incomming connections on the specified port
-func (s *Server) Serve() {
+// Start creates Listener for incomming connections on the sepecified port
+func (s *Server) Start() {
 	listner, err := net.Listen("tcp", fmt.Sprintf(":%d", s.config.port))
 	if err != nil {
-		s.logger.Fatalf("Failed to start server: %v\n", err)
+		s.logger.Fatalf("Failed to start the server: %v\n", err)
 	}
 
 	defer listner.Close()
 
+	s.listner = listner
+
 	s.logger.Printf("Server started on port: %v\n", s.config.port)
 
+	s.serve()
+}
+
+// serve starts accepting incomming connections
+func (s *Server) serve() {
 	// Accept and handle incomming connections
 	for {
-		conn, err := listner.Accept()
+		conn, err := s.listner.Accept()
 		if err != nil {
 			s.logger.Printf("Failed to accept connection: %v\n", err)
 			continue
 		}
 
 		// Handle each connecton in a new go routine for concurrency
-		go s.HandleConnection(conn)
+		go s.handleConnection(conn)
 
 	}
 }
 
 // HandleConnection processes each client connection
-func (s *Server) HandleConnection(conn net.Conn) {
+func (s *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
 	reader := resp.NewReader(conn)
 	writer := resp.NewWriter(conn)
