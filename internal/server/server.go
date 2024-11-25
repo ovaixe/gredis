@@ -6,7 +6,9 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 
+	"github.com/ovaixe/gredis/internal/aof"
 	"github.com/ovaixe/gredis/internal/commands"
 	"github.com/ovaixe/gredis/internal/resp"
 	"github.com/ovaixe/gredis/internal/storage"
@@ -23,6 +25,7 @@ type Server struct {
 	listner net.Listener
 	storage *storage.Storage
 	logger  *log.Logger
+	aof     *aof.Aof
 }
 
 // NewServer initialized a new server instance
@@ -41,9 +44,20 @@ func (s *Server) Start() {
 		s.logger.Fatalf("Failed to start the server: %v\n", err)
 	}
 
+	aof, err := aof.NewAof("database.aof")
+	if err != nil {
+		s.logger.Fatalf("Failed to create AOF: %v\n", err)
+	}
+
 	defer listner.Close()
+	defer aof.Close()
 
 	s.listner = listner
+	s.aof = aof
+
+	s.aof.Read(func(value resp.Value) {
+		commands.ExecuteCommand(value, s.storage)
+	})
 
 	s.logger.Printf("Server started on port: %v\n", s.config.port)
 
@@ -93,6 +107,14 @@ func (s *Server) handleConnection(conn net.Conn) {
 		if len(cmd.Array) == 0 {
 			s.logger.Println("Invalid request, expected array length > 0")
 			continue
+		}
+
+		command := strings.ToUpper(cmd.Array[0].Bulk)
+		if command == "SET" || command == "HSET" || command == "DEL" || command == "HDEL" || command == "HDELALL" {
+			err := s.aof.Write(cmd)
+			if err != nil {
+				s.logger.Printf("Failed to write to the aof: %v\n", err)
+			}
 		}
 
 		// Execute the command
