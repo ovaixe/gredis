@@ -59,9 +59,9 @@ func (s *Server) Start() {
 		commands.ExecuteCommand(value, s.storage)
 	})
 
-	s.logger.Printf("Server started on port: %v\n", s.config.port)
-
 	s.serve()
+
+	s.logger.Printf("Server started on port: %v\n", s.config.port)
 }
 
 // serve starts accepting incomming connections
