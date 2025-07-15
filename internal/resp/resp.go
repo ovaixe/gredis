@@ -116,7 +116,7 @@ func (r *Reader) readArray() (Value, error) {
 
 	// for each line, parse and read the value
 	v.Array = make([]Value, 0)
-	for i := 0; i < len; i++ {
+	for range len {
 		val, err := r.Read()
 		if err != nil {
 			return v, err
@@ -175,9 +175,10 @@ func (v Value) marshalString() []byte {
 }
 
 func (v Value) marshalBulk() []byte {
+	ln := len(v.Bulk)
 	var bytes []byte
 	bytes = append(bytes, BULK)
-	bytes = append(bytes, strconv.Itoa(len(v.Bulk))...)
+	bytes = append(bytes, strconv.Itoa(ln)...)
 	bytes = append(bytes, '\r', '\n')
 	bytes = append(bytes, v.Bulk...)
 	bytes = append(bytes, '\r', '\n')
@@ -186,13 +187,13 @@ func (v Value) marshalBulk() []byte {
 }
 
 func (v Value) marshalArray() []byte {
-	len := len(v.Array)
+	ln := len(v.Array)
 	var bytes []byte
 	bytes = append(bytes, ARRAY)
-	bytes = append(bytes, strconv.Itoa(len)...)
+	bytes = append(bytes, strconv.Itoa(ln)...)
 	bytes = append(bytes, '\r', '\n')
 
-	for i := 0; i < len; i++ {
+	for i := range ln {
 		bytes = append(bytes, v.Array[i].Marshal()...)
 	}
 

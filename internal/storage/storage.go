@@ -47,7 +47,7 @@ func (s *Storage) HSet(hash, key, value string) {
 	defer s.mu.Unlock()
 
 	if _, ok := s.hset[hash]; !ok {
-		s.hset[hash] = map[string]string{}
+		s.hset[hash] = make(map[string]string)
 	}
 
 	s.hset[hash][key] = value
